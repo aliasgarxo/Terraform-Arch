@@ -198,6 +198,13 @@ resource "aws_lb" "front_end" {
   enable_deletion_protection = false
 }
 
+resource "aws_lb_target_group" "front_end" {
+  name     = "front-end-lb-tg"
+  port     = "80"
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.arch-vpc.id
+}
+
 resource "aws_lb_listener" "front_end" {
   load_balancer_arn = aws_lb.front_end.arn
   port              = "80"
@@ -209,12 +216,7 @@ resource "aws_lb_listener" "front_end" {
   }
 }
 
-resource "aws_lb_target_group" "front_end" {
-  name     = "front-end-lb-tg"
-  port     = 3000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.arch-vpc.id
-}
+
 
 # Create a load balancer, listener, and target group for application tier
 
@@ -228,6 +230,13 @@ resource "aws_lb" "application_tier" {
   enable_deletion_protection = false
 }
 
+resource "aws_lb_target_group" "application_tier" {
+  name     = "application-tier-lb-tg"
+  port     = 3000
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.arch-vpc.id
+}
+
 resource "aws_lb_listener" "application_tier" {
   load_balancer_arn = aws_lb.application_tier.arn
   port              = "80"
@@ -239,12 +248,7 @@ resource "aws_lb_listener" "application_tier" {
   }
 }
 
-resource "aws_lb_target_group" "application_tier" {
-  name     = "application-tier-lb-tg"
-  port     = 3000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.arch-vpc.id
-}
+
 
 
 
@@ -330,10 +334,11 @@ resource "aws_autoscaling_group" "presentation_tier" {
     id      = aws_launch_template.presentation_tier.id
     version = "$Latest"
   }
+  target_group_arns = [aws_lb_target_group.front_end.arn]
 
-  lifecycle {
-    ignore_changes = [load_balancers, target_group_arns]
-  }
+#   lifecycle {
+#     ignore_changes = [load_balancers, target_group_arns]
+#   }
 
   tag {
     key                 = "Name"
@@ -356,10 +361,12 @@ resource "aws_autoscaling_group" "application_tier" {
     id      = aws_launch_template.application_tier.id
     version = "$Latest"
   }
+  target_group_arns = [aws_lb_target_group.application_tier.arn]
 
-  lifecycle {
-    ignore_changes = [load_balancers, target_group_arns]
-  }
+
+#   lifecycle {
+#     ignore_changes = [load_balancers, target_group_arns]
+#   }
 
   tag {
     key                 = "Name"
@@ -369,12 +376,12 @@ resource "aws_autoscaling_group" "application_tier" {
 }
 
 # Create a new ALB Target Group attachment
-resource "aws_autoscaling_attachment" "presentation_tier" {
-  autoscaling_group_name = aws_autoscaling_group.presentation_tier.id
-  lb_target_group_arn    = aws_lb_target_group.front_end.arn
-}
+# resource "aws_autoscaling_attachment" "presentation_tier" {
+#   autoscaling_group_name = aws_autoscaling_group.presentation_tier.id
+#   lb_target_group_arn    = aws_lb_target_group.front_end.arn
+# }
 
-resource "aws_autoscaling_attachment" "application_tier" {
-  autoscaling_group_name = aws_autoscaling_group.application_tier.id
-  lb_target_group_arn    = aws_lb_target_group.application_tier.arn
-}
+# resource "aws_autoscaling_attachment" "application_tier" {
+#   autoscaling_group_name = aws_autoscaling_group.application_tier.id
+#   lb_target_group_arn    = aws_lb_target_group.application_tier.arn
+# }
