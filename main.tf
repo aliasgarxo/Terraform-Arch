@@ -232,7 +232,7 @@ resource "aws_lb" "application_tier" {
 
 resource "aws_lb_target_group" "application_tier" {
   name     = "application-tier-lb-tg"
-  port     = 3000
+  port     = "80"
   protocol = "HTTP"
   vpc_id   = aws_vpc.arch-vpc.id
 }
